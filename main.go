@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"github.com/rivo/tview"
+
 	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
 	"golang.org/x/net/html"
 )
 
