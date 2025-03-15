@@ -1,10 +1,11 @@
 package main
 
 import (
-	"io"
+	"fmt"
 	"net/http"
 	"github.com/rivo/tview"
 	"github.com/gdamore/tcell/v2"
+	"golang.org/x/net/html"
 )
 
 func main() {
@@ -47,10 +48,25 @@ func fetchUrl(url string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
+	plaintext := ""
 
-	return string(body), nil
+	domDoc := html.NewTokenizer(resp.Body)
+    previousStartToken := domDoc.Token()
+	loopDom:
+		for {
+			current := domDoc.Next() // Gets type of next token
+			switch current {
+			case html.ErrorToken:
+				break loopDom // End of the document,  done
+			case html.StartTagToken:
+				previousStartToken = domDoc.Token() // Sets previousStartToken to html tag of token
+			case html.TextToken:
+				if previousStartToken.Data == "script" || previousStartToken.Data == "style" {
+					continue // Ignores text inside script or style tags
+				}
+				plaintext += fmt.Sprintf("%s\n", html.UnescapeString(string(domDoc.Text()))) // Appends text from current token to plaintext return value
+			}
+		}
+
+	return string(plaintext), nil
 }
